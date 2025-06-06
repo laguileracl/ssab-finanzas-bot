@@ -9,13 +9,7 @@ class FinanceTelegramBot {
   constructor(token: string) {
     // Use polling for both development and production for simplicity
     this.bot = new TelegramBot(token, { 
-      polling: true,
-      request: {
-        agentOptions: {
-          keepAlive: true,
-          family: 4
-        }
-      }
+      polling: true
     });
     
     this.setupCommands();
