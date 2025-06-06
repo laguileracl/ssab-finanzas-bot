@@ -246,7 +246,7 @@ class FinanceTelegramBot {
         `📊 Category: ${ticket.category}\n` +
         `⚡ Priority: ${ticket.priority}\n` +
         `📄 Description: ${ticket.description}\n` +
-        `📅 Created: ${new Date(ticket.createdAt).toLocaleString()}`;
+        `📅 Created: ${ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : 'Unknown'}`;
 
       try {
         await this.bot.sendMessage(parseInt(user.telegramId), message, { reply_markup: keyboard });
@@ -303,7 +303,7 @@ class FinanceTelegramBot {
           `📊 Category: ${ticket.category}\n` +
           `⚡ Priority: ${ticket.priority}\n` +
           `📊 Status: ${ticket.status}\n` +
-          `📅 Created: ${new Date(ticket.createdAt).toLocaleString()}\n`;
+          `📅 Created: ${ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : 'Unknown'}\n`;
 
         if (comments.length > 0) {
           detailMessage += '\n💬 Comments:\n';
