@@ -316,6 +316,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Health check endpoints
+  app.get('/api/health', async (req, res) => {
+    try {
+      // Basic health check
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'unhealthy',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get('/api/health/database', async (req, res) => {
+    try {
+      // Test database connection
+      const testResult = await storage.getTicketTemplates();
+      res.json({
+        status: 'healthy',
+        database: 'connected',
+        templates_count: testResult.length
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'unhealthy',
+        database: 'disconnected',
+        error: error instanceof Error ? error.message : 'Database connection failed'
+      });
+    }
+  });
+
+  app.get('/api/health/bot', async (req, res) => {
+    try {
+      // Check if bot token is configured
+      const hasToken = !!process.env.TELEGRAM_BOT_TOKEN;
+      res.json({
+        status: hasToken ? 'healthy' : 'unhealthy',
+        bot_configured: hasToken,
+        message: hasToken ? 'Bot token configured' : 'Bot token missing'
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'unhealthy',
+        error: error instanceof Error ? error.message : 'Bot check failed'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

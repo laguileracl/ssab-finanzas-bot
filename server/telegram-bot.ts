@@ -416,6 +416,14 @@ class FinanceTelegramBot {
     return ticket;
   }
 
+  private registerRoutes() {
+    // Register client-related routes (cliente, estado_cuenta, documentos_proveedor)
+    this.clientRoutes.registerRoutes(this.bot);
+    
+    // Register enhanced ticket routes with PythonAnywhere integration
+    this.ticketRoutes.registerRoutes(this.bot);
+  }
+
   public getBot() {
     return this.bot;
   }
