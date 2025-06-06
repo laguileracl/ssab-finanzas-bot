@@ -84,17 +84,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/telegram-users/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
       const updates = req.body;
+      console.log(`Updating user ${id} with:`, updates);
+      
       const user = await storage.updateTelegramUser(id, updates);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
+      console.log(`User ${id} updated successfully`);
       res.json(user);
     } catch (error) {
       console.error("Error updating telegram user:", error);
-      res.status(500).json({ message: "Failed to update telegram user" });
+      res.status(500).json({ 
+        message: "Failed to update telegram user",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
@@ -139,17 +149,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/ticket-templates/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+
       const updates = req.body;
+      console.log(`Updating template ${id} with:`, updates);
+      
       const template = await storage.updateTicketTemplate(id, updates);
       
       if (!template) {
         return res.status(404).json({ message: "Template not found" });
       }
       
+      console.log(`Template ${id} updated successfully`);
       res.json(template);
     } catch (error) {
       console.error("Error updating ticket template:", error);
-      res.status(500).json({ message: "Failed to update ticket template" });
+      res.status(500).json({ 
+        message: "Failed to update ticket template",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

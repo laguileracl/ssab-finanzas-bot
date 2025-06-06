@@ -112,12 +112,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTelegramUser(id: number, updates: Partial<InsertTelegramUser>): Promise<TelegramUser | undefined> {
-    const [user] = await db
-      .update(telegramUsers)
-      .set(updates)
-      .where(eq(telegramUsers.id, id))
-      .returning();
-    return user;
+    try {
+      // Clean updates to ensure proper type handling
+      const cleanUpdates: any = {};
+      Object.keys(updates).forEach(key => {
+        const value = (updates as any)[key];
+        if (value !== undefined) {
+          cleanUpdates[key] = value;
+        }
+      });
+
+      const [user] = await db
+        .update(telegramUsers)
+        .set(cleanUpdates)
+        .where(eq(telegramUsers.id, id))
+        .returning();
+      return user;
+    } catch (error) {
+      console.error('Database error updating telegram user:', error);
+      throw new Error('Failed to update telegram user in database');
+    }
   }
 
   async getTelegramUsersByRole(role: string): Promise<TelegramUser[]> {
@@ -145,20 +159,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTicketTemplate(templateData: InsertTicketTemplate): Promise<TicketTemplate> {
-    const [template] = await db
-      .insert(ticketTemplates)
-      .values(templateData)
-      .returning();
-    return template;
+    try {
+      const [template] = await db
+        .insert(ticketTemplates)
+        .values(templateData)
+        .returning();
+      return template;
+    } catch (error) {
+      console.error('Database error creating ticket template:', error);
+      throw new Error('Failed to create ticket template in database');
+    }
   }
 
   async updateTicketTemplate(id: number, updates: Partial<InsertTicketTemplate>): Promise<TicketTemplate | undefined> {
-    const [template] = await db
-      .update(ticketTemplates)
-      .set(updates)
-      .where(eq(ticketTemplates.id, id))
-      .returning();
-    return template;
+    try {
+      // Filter out undefined values and ensure proper type handling
+      const cleanUpdates: any = {};
+      Object.keys(updates).forEach(key => {
+        const value = (updates as any)[key];
+        if (value !== undefined) {
+          cleanUpdates[key] = value;
+        }
+      });
+
+      const [template] = await db
+        .update(ticketTemplates)
+        .set(cleanUpdates)
+        .where(eq(ticketTemplates.id, id))
+        .returning();
+      return template;
+    } catch (error) {
+      console.error('Database error updating ticket template:', error);
+      throw new Error('Failed to update ticket template in database');
+    }
   }
 
   async deleteTicketTemplate(id: number): Promise<boolean> {

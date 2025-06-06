@@ -53,7 +53,7 @@ export const ticketTemplates = pgTable("ticket_templates", {
   name: varchar("name").notNull(),
   description: text("description"),
   category: varchar("category").notNull(), // 'payment', 'invoice', 'budget', 'expense', 'other'
-  requiredFields: jsonb("required_fields").$type<string[]>().default([]),
+  requiredFields: jsonb("required_fields").default([]),
   estimatedTime: integer("estimated_time_hours"),
   priority: varchar("priority").notNull().default("medium"), // 'low', 'medium', 'high', 'urgent'
   isActive: boolean("is_active").default(true),
