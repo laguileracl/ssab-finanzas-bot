@@ -1,10 +1,16 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { storage } from './storage';
+import { ClientRoutes } from './routes/clientRoutes';
+import { TicketRoutes } from './routes/ticketRoutes';
+import { PythonAnywhereService } from './services/pythonAnywhereService';
 import type { TelegramUser, TicketTemplate, Ticket } from '@shared/schema';
 
 class FinanceTelegramBot {
   private bot: TelegramBot;
   private userSessions: Map<string, { step: string; data: any }> = new Map();
+  private clientRoutes: ClientRoutes;
+  private ticketRoutes: TicketRoutes;
+  private pythonAnywhereService: PythonAnywhereService;
 
   constructor(token: string) {
     // Use polling for both development and production for simplicity
@@ -12,8 +18,13 @@ class FinanceTelegramBot {
       polling: true
     });
     
+    this.clientRoutes = new ClientRoutes();
+    this.ticketRoutes = new TicketRoutes();
+    this.pythonAnywhereService = new PythonAnywhereService();
+    
     this.setupCommands();
     this.setupCallbacks();
+    this.registerRoutes();
   }
 
   private setupCommands() {
@@ -37,12 +48,16 @@ class FinanceTelegramBot {
       }
 
       await this.bot.sendMessage(chatId, 
-        `🏦 Welcome to Finance Support Bot!\n\n` +
-        `I'm here to help you with financial requests. Here's what you can do:\n\n` +
-        `📝 /request - Submit a new finance request\n` +
-        `📋 /status - Check your ticket status\n` +
-        `❓ /help - Get help and support\n\n` +
-        `Let me know how I can assist you today!`
+        `🏦 Bienvenido al Bot de Finanzas SSAB Chile!\n\n` +
+        `Estoy aquí para ayudarte con consultas financieras. Esto es lo que puedo hacer:\n\n` +
+        `📝 /request - Crear solicitud de soporte\n` +
+        `👤 /cliente <RUT/Nombre> - Consultar datos de cliente\n` +
+        `📊 /estado_cuenta <RUT> - Estado de cuenta y antigüedad\n` +
+        `📁 /documentos_proveedor - Documentos para proveedores\n` +
+        `📋 /mis_tickets - Ver mis tickets\n` +
+        `⏳ /tickets_pendientes - Ver tickets pendientes (staff)\n` +
+        `❓ /help - Ayuda y soporte\n\n` +
+        `¡Dime en qué puedo ayudarte hoy!`
       );
     });
 
