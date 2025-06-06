@@ -64,7 +64,7 @@ export function ScriptFilters({ onFiltersChange }: ScriptFiltersProps) {
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="trend-following">Trend Following</SelectItem>
               <SelectItem value="mean-reversion">Mean Reversion</SelectItem>
               <SelectItem value="momentum">Momentum</SelectItem>
@@ -113,7 +113,7 @@ export function ScriptFilters({ onFiltersChange }: ScriptFiltersProps) {
               <SelectValue placeholder="All Pairs" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Pairs</SelectItem>
+              <SelectItem value="all">All Pairs</SelectItem>
               <SelectItem value="BTCUSD">BTC/USD</SelectItem>
               <SelectItem value="ETHUSD">ETH/USD</SelectItem>
               <SelectItem value="EURUSD">EUR/USD</SelectItem>
