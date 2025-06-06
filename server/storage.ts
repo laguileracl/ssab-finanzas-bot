@@ -1,150 +1,333 @@
-import { 
-  scripts, 
-  scriptVersions,
-  type Script, 
-  type InsertScript,
-  type ScriptVersion,
-  type InsertScriptVersion
+import {
+  users,
+  telegramUsers,
+  ticketTemplates,
+  tickets,
+  ticketComments,
+  telegramMessages,
+  type User,
+  type UpsertUser,
+  type TelegramUser,
+  type InsertTelegramUser,
+  type TicketTemplate,
+  type InsertTicketTemplate,
+  type Ticket,
+  type InsertTicket,
+  type TicketComment,
+  type InsertTicketComment,
+  type TelegramMessage,
+  type InsertTelegramMessage,
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and, or, like, count } from "drizzle-orm";
 
 export interface IStorage {
-  // Script operations
-  getScript(id: number): Promise<Script | undefined>;
-  getScripts(): Promise<Script[]>;
-  createScript(script: InsertScript): Promise<Script>;
-  updateScript(id: number, script: Partial<InsertScript>): Promise<Script | undefined>;
-  deleteScript(id: number): Promise<boolean>;
-  searchScripts(query: string): Promise<Script[]>;
-  filterScripts(filters: {
-    category?: string;
-    timeframes?: string[];
-    tradingPair?: string;
-    performance?: string;
-  }): Promise<Script[]>;
+  // User operations for Replit Auth
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
 
-  // Version operations
-  getScriptVersions(scriptId: number): Promise<ScriptVersion[]>;
-  createScriptVersion(version: InsertScriptVersion): Promise<ScriptVersion>;
-  getScriptVersion(id: number): Promise<ScriptVersion | undefined>;
+  // Telegram user operations
+  getTelegramUser(telegramId: string): Promise<TelegramUser | undefined>;
+  createTelegramUser(user: InsertTelegramUser): Promise<TelegramUser>;
+  updateTelegramUser(id: number, updates: Partial<InsertTelegramUser>): Promise<TelegramUser | undefined>;
+  getTelegramUsersByRole(role: string): Promise<TelegramUser[]>;
+
+  // Ticket template operations
+  getTicketTemplates(): Promise<TicketTemplate[]>;
+  getTicketTemplate(id: number): Promise<TicketTemplate | undefined>;
+  createTicketTemplate(template: InsertTicketTemplate): Promise<TicketTemplate>;
+  updateTicketTemplate(id: number, updates: Partial<InsertTicketTemplate>): Promise<TicketTemplate | undefined>;
+  deleteTicketTemplate(id: number): Promise<boolean>;
+
+  // Ticket operations
+  getTickets(filters?: {
+    status?: string;
+    priority?: string;
+    category?: string;
+    assigneeId?: number;
+    requesterId?: number;
+  }): Promise<Ticket[]>;
+  getTicket(id: number): Promise<Ticket | undefined>;
+  createTicket(ticket: InsertTicket): Promise<Ticket>;
+  updateTicket(id: number, updates: Partial<InsertTicket>): Promise<Ticket | undefined>;
+  getTicketsByRequester(requesterId: number): Promise<Ticket[]>;
+  getTicketsByAssignee(assigneeId: number): Promise<Ticket[]>;
+
+  // Ticket comment operations
+  getTicketComments(ticketId: number, includeInternal?: boolean): Promise<TicketComment[]>;
+  createTicketComment(comment: InsertTicketComment): Promise<TicketComment>;
+
+  // Telegram message operations
+  createTelegramMessage(message: InsertTelegramMessage): Promise<TelegramMessage>;
+  getTelegramMessages(telegramId: string, limit?: number): Promise<TelegramMessage[]>;
+
+  // Dashboard analytics
+  getTicketStats(): Promise<{
+    total: number;
+    pending: number;
+    inProgress: number;
+    completed: number;
+    byCategory: Record<string, number>;
+    byPriority: Record<string, number>;
+  }>;
 }
 
-export class MemStorage implements IStorage {
-  private scripts: Map<number, Script>;
-  private scriptVersions: Map<number, ScriptVersion>;
-  private currentScriptId: number;
-  private currentVersionId: number;
-
-  constructor() {
-    this.scripts = new Map();
-    this.scriptVersions = new Map();
-    this.currentScriptId = 1;
-    this.currentVersionId = 1;
+export class DatabaseStorage implements IStorage {
+  // User operations for Replit Auth
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
-  async getScript(id: number): Promise<Script | undefined> {
-    return this.scripts.get(id);
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
   }
 
-  async getScripts(): Promise<Script[]> {
-    return Array.from(this.scripts.values()).sort((a, b) => 
-      new Date(b.lastModified!).getTime() - new Date(a.lastModified!).getTime()
-    );
+  // Telegram user operations
+  async getTelegramUser(telegramId: string): Promise<TelegramUser | undefined> {
+    const [user] = await db
+      .select()
+      .from(telegramUsers)
+      .where(eq(telegramUsers.telegramId, telegramId));
+    return user;
   }
 
-  async createScript(insertScript: InsertScript): Promise<Script> {
-    const now = new Date();
-    const id = this.currentScriptId++;
-    const script: Script = {
-      ...insertScript,
-      id,
-      createdAt: now,
-      lastModified: now,
-    };
-    this.scripts.set(id, script);
-
-    // Create initial version
-    await this.createScriptVersion({
-      scriptId: id,
-      version: "v1.0.0",
-      content: insertScript.content,
-      description: "Initial version",
-      additions: insertScript.content.split('\n').length,
-      deletions: 0,
-    });
-
-    return script;
+  async createTelegramUser(userData: InsertTelegramUser): Promise<TelegramUser> {
+    const [user] = await db
+      .insert(telegramUsers)
+      .values(userData)
+      .returning();
+    return user;
   }
 
-  async updateScript(id: number, updates: Partial<InsertScript>): Promise<Script | undefined> {
-    const script = this.scripts.get(id);
-    if (!script) return undefined;
-
-    const updatedScript: Script = {
-      ...script,
-      ...updates,
-      lastModified: new Date(),
-    };
-    this.scripts.set(id, updatedScript);
-    return updatedScript;
+  async updateTelegramUser(id: number, updates: Partial<InsertTelegramUser>): Promise<TelegramUser | undefined> {
+    const [user] = await db
+      .update(telegramUsers)
+      .set(updates)
+      .where(eq(telegramUsers.id, id))
+      .returning();
+    return user;
   }
 
-  async deleteScript(id: number): Promise<boolean> {
-    const deleted = this.scripts.delete(id);
-    // Also delete all versions
-    const versions = Array.from(this.scriptVersions.values()).filter(v => v.scriptId === id);
-    versions.forEach(v => this.scriptVersions.delete(v.id));
-    return deleted;
+  async getTelegramUsersByRole(role: string): Promise<TelegramUser[]> {
+    return await db
+      .select()
+      .from(telegramUsers)
+      .where(and(eq(telegramUsers.role, role), eq(telegramUsers.isActive, true)));
   }
 
-  async searchScripts(query: string): Promise<Script[]> {
-    const lowerQuery = query.toLowerCase();
-    return Array.from(this.scripts.values()).filter(script =>
-      script.name.toLowerCase().includes(lowerQuery) ||
-      script.description?.toLowerCase().includes(lowerQuery) ||
-      script.content.toLowerCase().includes(lowerQuery) ||
-      script.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
-    );
+  // Ticket template operations
+  async getTicketTemplates(): Promise<TicketTemplate[]> {
+    return await db
+      .select()
+      .from(ticketTemplates)
+      .where(eq(ticketTemplates.isActive, true))
+      .orderBy(ticketTemplates.name);
   }
 
-  async filterScripts(filters: {
+  async getTicketTemplate(id: number): Promise<TicketTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(ticketTemplates)
+      .where(eq(ticketTemplates.id, id));
+    return template;
+  }
+
+  async createTicketTemplate(templateData: InsertTicketTemplate): Promise<TicketTemplate> {
+    const [template] = await db
+      .insert(ticketTemplates)
+      .values(templateData)
+      .returning();
+    return template;
+  }
+
+  async updateTicketTemplate(id: number, updates: Partial<InsertTicketTemplate>): Promise<TicketTemplate | undefined> {
+    const [template] = await db
+      .update(ticketTemplates)
+      .set(updates)
+      .where(eq(ticketTemplates.id, id))
+      .returning();
+    return template;
+  }
+
+  async deleteTicketTemplate(id: number): Promise<boolean> {
+    const result = await db
+      .update(ticketTemplates)
+      .set({ isActive: false })
+      .where(eq(ticketTemplates.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Ticket operations
+  async getTickets(filters?: {
+    status?: string;
+    priority?: string;
     category?: string;
-    timeframes?: string[];
-    tradingPair?: string;
-    performance?: string;
-  }): Promise<Script[]> {
-    return Array.from(this.scripts.values()).filter(script => {
-      if (filters.category && script.category !== filters.category) return false;
-      if (filters.timeframes && filters.timeframes.length > 0 && 
-          !filters.timeframes.includes(script.timeframe || '')) return false;
-      if (filters.tradingPair && script.tradingPair !== filters.tradingPair) return false;
-      if (filters.performance && filters.performance !== 'all') {
-        if (filters.performance === 'profitable' && (script.performanceValue || 0) <= 0) return false;
-        if (filters.performance === 'testing' && script.status !== 'testing') return false;
+    assigneeId?: number;
+    requesterId?: number;
+  }): Promise<Ticket[]> {
+    if (filters) {
+      const conditions = [];
+      if (filters.status) conditions.push(eq(tickets.status, filters.status));
+      if (filters.priority) conditions.push(eq(tickets.priority, filters.priority));
+      if (filters.category) conditions.push(eq(tickets.category, filters.category));
+      if (filters.assigneeId) conditions.push(eq(tickets.assigneeId, filters.assigneeId));
+      if (filters.requesterId) conditions.push(eq(tickets.requesterId, filters.requesterId));
+      
+      if (conditions.length > 0) {
+        return await db
+          .select()
+          .from(tickets)
+          .where(and(...conditions))
+          .orderBy(desc(tickets.createdAt));
       }
-      return true;
-    });
+    }
+    
+    return await db
+      .select()
+      .from(tickets)
+      .orderBy(desc(tickets.createdAt));
   }
 
-  async getScriptVersions(scriptId: number): Promise<ScriptVersion[]> {
-    return Array.from(this.scriptVersions.values())
-      .filter(version => version.scriptId === scriptId)
-      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  async getTicket(id: number): Promise<Ticket | undefined> {
+    const [ticket] = await db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.id, id));
+    return ticket;
   }
 
-  async createScriptVersion(insertVersion: InsertScriptVersion): Promise<ScriptVersion> {
-    const id = this.currentVersionId++;
-    const version: ScriptVersion = {
-      ...insertVersion,
-      id,
-      createdAt: new Date(),
+  async createTicket(ticketData: InsertTicket): Promise<Ticket> {
+    const [ticket] = await db
+      .insert(tickets)
+      .values(ticketData)
+      .returning();
+    return ticket;
+  }
+
+  async updateTicket(id: number, updates: Partial<InsertTicket>): Promise<Ticket | undefined> {
+    const updatedData = {
+      ...updates,
+      updatedAt: new Date(),
     };
-    this.scriptVersions.set(id, version);
-    return version;
+    
+    if (updates.status === 'completed' && !updates.completedAt) {
+      updatedData.completedAt = new Date();
+    }
+    
+    const [ticket] = await db
+      .update(tickets)
+      .set(updatedData)
+      .where(eq(tickets.id, id))
+      .returning();
+    return ticket;
   }
 
-  async getScriptVersion(id: number): Promise<ScriptVersion | undefined> {
-    return this.scriptVersions.get(id);
+  async getTicketsByRequester(requesterId: number): Promise<Ticket[]> {
+    return await db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.requesterId, requesterId))
+      .orderBy(desc(tickets.createdAt));
+  }
+
+  async getTicketsByAssignee(assigneeId: number): Promise<Ticket[]> {
+    return await db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.assigneeId, assigneeId))
+      .orderBy(desc(tickets.createdAt));
+  }
+
+  // Ticket comment operations
+  async getTicketComments(ticketId: number, includeInternal = false): Promise<TicketComment[]> {
+    if (!includeInternal) {
+      return await db
+        .select()
+        .from(ticketComments)
+        .where(and(
+          eq(ticketComments.ticketId, ticketId),
+          eq(ticketComments.isInternal, false)
+        ))
+        .orderBy(ticketComments.createdAt);
+    }
+    
+    return await db
+      .select()
+      .from(ticketComments)
+      .where(eq(ticketComments.ticketId, ticketId))
+      .orderBy(ticketComments.createdAt);
+  }
+
+  async createTicketComment(commentData: InsertTicketComment): Promise<TicketComment> {
+    const [comment] = await db
+      .insert(ticketComments)
+      .values(commentData)
+      .returning();
+    return comment;
+  }
+
+  // Telegram message operations
+  async createTelegramMessage(messageData: InsertTelegramMessage): Promise<TelegramMessage> {
+    const [message] = await db
+      .insert(telegramMessages)
+      .values(messageData)
+      .returning();
+    return message;
+  }
+
+  async getTelegramMessages(telegramId: string, limit = 50): Promise<TelegramMessage[]> {
+    return await db
+      .select()
+      .from(telegramMessages)
+      .where(eq(telegramMessages.telegramId, telegramId))
+      .orderBy(desc(telegramMessages.createdAt))
+      .limit(limit);
+  }
+
+  // Dashboard analytics
+  async getTicketStats(): Promise<{
+    total: number;
+    pending: number;
+    inProgress: number;
+    completed: number;
+    byCategory: Record<string, number>;
+    byPriority: Record<string, number>;
+  }> {
+    const allTickets = await db.select().from(tickets);
+    
+    const stats = {
+      total: allTickets.length,
+      pending: allTickets.filter(t => t.status === 'pending').length,
+      inProgress: allTickets.filter(t => t.status === 'in_progress').length,
+      completed: allTickets.filter(t => t.status === 'completed').length,
+      byCategory: {} as Record<string, number>,
+      byPriority: {} as Record<string, number>,
+    };
+    
+    // Count by category
+    allTickets.forEach(ticket => {
+      stats.byCategory[ticket.category] = (stats.byCategory[ticket.category] || 0) + 1;
+    });
+    
+    // Count by priority
+    allTickets.forEach(ticket => {
+      stats.byPriority[ticket.priority] = (stats.byPriority[ticket.priority] || 0) + 1;
+    });
+    
+    return stats;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
