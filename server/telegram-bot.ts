@@ -7,7 +7,17 @@ class FinanceTelegramBot {
   private userSessions: Map<string, { step: string; data: any }> = new Map();
 
   constructor(token: string) {
-    this.bot = new TelegramBot(token, { polling: true });
+    // Use polling for both development and production for simplicity
+    this.bot = new TelegramBot(token, { 
+      polling: true,
+      request: {
+        agentOptions: {
+          keepAlive: true,
+          family: 4
+        }
+      }
+    });
+    
     this.setupCommands();
     this.setupCallbacks();
   }
