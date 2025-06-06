@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Bot Dashboard Demo</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; background: #f5f7fa; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #1e40af; }
+        .stat-label { color: #6b7280; margin-top: 5px; }
+        .table { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .table-header { background: #f9fafb; padding: 15px; font-weight: 600; border-bottom: 1px solid #e5e7eb; }
+        .table-row { padding: 15px; border-bottom: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr 150px 100px 120px 100px; gap: 20px; align-items: center; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 0.875rem; font-weight: 500; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-progress { background: #dbeafe; color: #1e40af; }
+        .badge-completed { background: #d1fae5; color: #065f46; }
+        .badge-high { background: #fee2e2; color: #991b1b; }
+        .badge-medium { background: #fef3c7; color: #92400e; }
+        .badge-low { background: #d1fae5; color: #065f46; }
+        .nav { display: flex; gap: 20px; margin-top: 20px; }
+        .nav-item { padding: 10px 20px; background: #3b82f6; color: white; border-radius: 6px; text-decoration: none; }
+        .nav-item:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Finance Bot Dashboard</h1>
+            <p>Comprehensive ticket management and analytics</p>
+            <div class="nav">
+                <a href="#" class="nav-item">Dashboard</a>
+                <a href="#" class="nav-item">Tickets</a>
+                <a href="#" class="nav-item">Templates</a>
+                <a href="#" class="nav-item">Users</a>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">127</div>
+                <div class="stat-label">Total Tickets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">23</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">42</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">62</div>
+                <div class="stat-label">Completed</div>
+            </div>
+        </div>
+
+        <div class="table">
+            <div class="table-header">Recent Finance Tickets</div>
+            <div class="table-row">
+                <div>
+                    <strong>Expense Reimbursement</strong><br>
+                    <small>Travel expenses for Q4 conference</small>
+                </div>
+                <div>$1,250.00</div>
+                <div><span class="badge badge-pending">Pending</span></div>
+                <div><span class="badge badge-high">High</span></div>
+                <div>2 hours ago</div>
+            </div>
+            <div class="table-row">
+                <div>
+                    <strong>Invoice Payment</strong><br>
+                    <small>Software licensing renewal</small>
+                </div>
+                <div>$5,600.00</div>
+                <div><span class="badge badge-progress">In Progress</span></div>
+                <div><span class="badge badge-medium">Medium</span></div>
+                <div>5 hours ago</div>
+            </div>
+            <div class="table-row">
+                <div>
+                    <strong>Budget Approval</strong><br>
+                    <small>Marketing campaign budget</small>
+                </div>
+                <div>$15,000.00</div>
+                <div><span class="badge badge-completed">Completed</span></div>
+                <div><span class="badge badge-low">Low</span></div>
+                <div>1 day ago</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3>Key Features Demonstrated:</h3>
+            <ul style="line-height: 1.8;">
+                <li><strong>Real-time Analytics:</strong> Live ticket statistics and performance metrics</li>
+                <li><strong>Ticket Management:</strong> Complete CRUD operations with filtering and search</li>
+                <li><strong>Template System:</strong> Pre-configured forms for common finance requests</li>
+                <li><strong>User Management:</strong> Role-based access control and permissions</li>
+                <li><strong>Automated Notifications:</strong> Instant Telegram alerts for finance team</li>
+                <li><strong>Status Tracking:</strong> Real-time updates sent back to requesters</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
