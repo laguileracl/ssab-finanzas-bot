@@ -23,21 +23,17 @@ export default function Tickets() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: tickets, isLoading } = useQuery({
+  const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["/api/tickets", { status: filterStatus, priority: filterPriority, category: filterCategory }],
   });
 
-  const { data: users } = useQuery({
+  const { data: users = [] } = useQuery({
     queryKey: ["/api/telegram-users"],
   });
 
   const updateTicketMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
-      return await apiRequest(`/api/tickets/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-        headers: { "Content-Type": "application/json" },
-      });
+      return await apiRequest("PATCH", `/api/tickets/${id}`, updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
@@ -51,11 +47,7 @@ export default function Tickets() {
 
   const addCommentMutation = useMutation({
     mutationFn: async ({ ticketId, comment }: { ticketId: number; comment: string }) => {
-      return await apiRequest(`/api/tickets/${ticketId}/comments`, {
-        method: "POST",
-        body: JSON.stringify({ comment, userId: 1, isInternal: true }),
-        headers: { "Content-Type": "application/json" },
-      });
+      return await apiRequest("POST", `/api/tickets/${ticketId}/comments`, { comment, userId: 1, isInternal: true });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
@@ -85,7 +77,7 @@ export default function Tickets() {
   };
 
   const getUserName = (userId: number) => {
-    const user = users?.find((u: any) => u.id === userId);
+    const user = (users as any[])?.find((u: any) => u.id === userId);
     return user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || 'Unknown' : 'Unknown';
   };
 
@@ -99,7 +91,7 @@ export default function Tickets() {
     updateTicketMutation.mutate({ id: selectedTicket.id, updates });
   };
 
-  const filteredTickets = tickets || [];
+  const filteredTickets = (tickets as any[]) || [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
