@@ -18,9 +18,13 @@ async function checkDatabase() {
     `);
     
     console.log('📋 Available tables:');
-    tablesQuery.forEach((row: any) => {
-      console.log(`  - ${row.table_name}`);
-    });
+    if (Array.isArray(tablesQuery)) {
+      tablesQuery.forEach((row: any) => {
+        console.log(`  - ${row.table_name}`);
+      });
+    } else {
+      console.log('  No tables found or unexpected result format');
+    }
     
     // Check table row counts
     try {
